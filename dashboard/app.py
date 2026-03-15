@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-import pandas_ta as ta
+import ta as ta_lib
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -91,15 +91,13 @@ def load_data(ticker, start, end):
     feat["Volume_Ratio"] = (
         feat["Volume"] /
         feat["Volume"].rolling(20).mean())
-    feat["RSI"]  = ta.rsi(feat["Close"], length=14)
-    macd_df = ta.macd(feat["Close"])
-    if macd_df is not None:
-        feat["MACD"] = macd_df.iloc[:, 0]
-    bb_df = ta.bbands(feat["Close"], length=20)
-    if bb_df is not None:
-        feat["BB_upper"]  = bb_df.iloc[:, 2]
-        feat["BB_middle"] = bb_df.iloc[:, 1]
-        feat["BB_lower"]  = bb_df.iloc[:, 0]
+    feat["RSI"]  = ta_lib.momentum.RSIIndicator(feat["Close"], window=14).rsi()
+    macd_indicator = ta_lib.trend.MACD(feat["Close"])
+    feat["MACD"] = macd_indicator.macd()
+    bb_indicator = ta_lib.volatility.BollingerBands(feat["Close"], window=20)
+    feat["BB_upper"]  = bb_indicator.bollinger_hband()
+    feat["BB_middle"] = bb_indicator.bollinger_mavg()
+    feat["BB_lower"]  = bb_indicator.bollinger_lband()
     feat["MA_20"] = feat["Close"].rolling(20).mean()
     feat["MA_50"] = feat["Close"].rolling(50).mean()
     return feat.dropna()
